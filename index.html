@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IlluminatiWX • Weather Enlightenment</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        :root {
+            --ps2-blue: #00b0ff;
+            --ps2-glow: #00ffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #001122 0%, #000000 70%);
+            color: #ffffff;
+            font-family: 'Press Start 2P', system-ui, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            image-rendering: pixelated;
+        }
+
+        /* PS2-style subtle scanlines */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                rgba(0, 255, 255, 0.03) 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1;
+            animation: scanline 4s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        .header {
+            padding: 20px;
+            text-align: center;
+            background: linear-gradient(to bottom, rgba(0, 20, 40, 0.9), transparent);
+            border-bottom: 4px solid var(--ps2-blue);
+            z-index: 10;
+            position: relative;
+        }
+
+        .logo {
+            font-size: 42px;
+            letter-spacing: 8px;
+            text-shadow: 
+                0 0 10px var(--ps2-glow),
+                0 0 20px var(--ps2-glow),
+                0 0 40px var(--ps2-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .logo span {
+            font-size: 28px;
+            color: var(--ps2-blue);
+        }
+
+        .main {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .section {
+            display: none;
+            width: 100%;
+            max-width: 1100px;
+            height: 100%;
+            background: rgba(0, 15, 35, 0.85);
+            border: 3px solid var(--ps2-blue);
+            box-shadow: 0 0 30px var(--ps2-glow);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .content-inner {
+            padding: 40px;
+            height: 100%;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+
+        .content-inner::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* XMB HORIZONTAL MENU */
+        .xmb {
+            height: 160px;
+            background: linear-gradient(to top, #000000, #001122);
+            border-top: 6px solid var(--ps2-blue);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 40px;
+            padding-bottom: 20px;
+            position: relative;
+            z-index: 20;
+            box-shadow: 0 -10px 30px rgba(0, 176, 255, 0.4);
+        }
+
+        .menu-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        .menu-item:hover {
+            transform: scale(1.25) translateY(-8px);
+            filter: brightness(1.3);
+        }
+
+        .menu-item.active {
+            transform: scale(1.35) translateY(-12px);
+            box-shadow: 
+                0 0 25px var(--ps2-glow),
+                0 0 50px var(--ps2-blue);
+            background: rgba(0, 176, 255, 0.15);
+        }
+
+        .menu-icon {
+            font-size: 68px;
+            margin-bottom: 8px;
+            text-shadow: 
+                0 0 15px var(--ps2-glow),
+                0 0 30px var(--ps2-blue);
+            transition: all 0.3s;
+        }
+
+        .menu-label {
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #aaffff;
+            text-shadow: 0 0 10px var(--ps2-blue);
+        }
+
+        /* VERTICAL SUB-MENU (PS2 style) */
+        .vertical-bar {
+            position: absolute;
+            left: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 10, 30, 0.95);
+            border: 3px solid var(--ps2-blue);
+            padding: 15px;
+            width: 240px;
+            box-shadow: 0 0 40px var(--ps2-glow);
+            z-index: 5;
+        }
+
+        .vertical-bar ul {
+            list-style: none;
+        }
+
+        .vertical-bar li {
+            padding: 18px 20px;
+            font-size: 15px;
+            border-bottom: 1px solid rgba(0, 176, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .vertical-bar li:hover,
+        .vertical-bar li.active {
+            background: var(--ps2-blue);
+            color: #000;
+            padding-left: 30px;
+            text-shadow: none;
+        }
+
+        /* Weather demo card */
+        .weather-card {
+            background: rgba(0, 20, 50, 0.9);
+            border: 4px solid var(--ps2-blue);
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 0 40px var(--ps2-glow);
+            max-width: 420px;
+            margin: 40px auto;
+        }
+
+        .temp {
+            font-size: 72px;
+            font-weight: bold;
+            text-shadow: 0 0 20px #ff00aa;
+        }
+
+        /* Form styling */
+        input, textarea {
+            background: #000;
+            border: 2px solid var(--ps2-blue);
+            color: #fff;
+            padding: 12px;
+            font-family: 'Press Start 2P';
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        button {
+            background: var(--ps2-blue);
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-family: 'Press Start 2P';
+            cursor: pointer;
+            box-shadow: 0 0 20px var(--ps2-glow);
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 40px var(--ps2-glow);
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="header">
+        <div class="logo">
+            👁️ <span>ILLUMINATI</span>WX
+        </div>
+        <p style="margin-top: 8px; font-size: 12px; letter-spacing: 6px; color: #00ffff;">WEATHER ENLIGHTENMENT PROTOCOL v1.0</p>
+    </div>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="main">
+
+        <!-- HOME SECTION -->
+        <div id="home" class="section active">
+            <div class="content-inner" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                <h1 style="font-size: 48px; margin-bottom: 20px; text-shadow: 0 0 30px var(--ps2-glow);"></h1>
+                <p style="max-width: 700px; line-height: 1.6; font-size: 18px; color: #aaffff;">
+                    Enlightened We Are.<br>
+                    No Mystery. We reveal the truth.
+                </p>
+            </div>
+        </div>
+
+        <!-- WEATHER TOOLS SECTION -->
+        <div id="tools" class="section">
+            <div class="vertical-bar">
+                <ul>
+                    <li onclick="selectSub(this)" class="active">SHADOW RADAR</li>
+                    <li onclick="selectSub(this)">PREDICTIVE AI</li>
+                    <li onclick="selectSub(this)">VEIL CAM</li>
+                    <li onclick="selectSub(this)">CONSPIRACY ALERTS</li>
+                </ul>
+            </div>
+            <div class="content-inner" style="margin-left: 300px;">
+                <h2 style="font-size: 36px; margin-bottom: 30px;">WEATHER TOOLS</h2>
+                <p style="line-height: 1.8; max-width: 700px;">
+                    Our tools pierce the illusion of "natural" weather.<br>
+                    Real-time data from hidden satellites and ancient algorithms.
+                </p>
+                <div style="margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div style="background: rgba(0,30,60,0.7); padding: 25px; border: 2px solid #00b0ff;">
+                        <h3>SHADOW RADAR</h3>
+                        <p>Detects weather modification events in real time.</p>
+                    </div>
+                    <div style="background: rgba(0,30,60,0.7); padding: 25px; border: 2px solid #00b0ff;">
+                        <h3>PREDICTIVE AI</h3>
+                        <p>Forecasts up to 30 days with 99.7% accuracy.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRODUCTS SECTION -->
+        <div id="products" class="section">
+            <div class="vertical-bar">
+                <ul>
+                    <li onclick="selectSub(this)" class="active">ILLUMINATI APP</li>
+                    <li onclick="selectSub(this)">WX API v2</li>
+                    <li onclick="selectSub(this)">ORACLE DASHBOARD</li>
+                </ul>
+            </div>
+            <div class="content-inner" style="margin-left: 300px;">
+                <h2 style="font-size: 36px; margin-bottom: 30px;">OUR PRODUCTS</h2>
+                <div style="display: flex; flex-direction: column; gap: 25px; max-width: 650px;">
+                    <div style="border: 3px solid var(--ps2-blue); padding: 25px; background: rgba(0,15,40,0.8);">
+                        <strong>ILLUMINATI FORECAST APP</strong><br>
+                        Mobile enlightenment for iOS &amp; Android. See what they don't want you to see.
+                    </div>
+                    <div style="border: 3px solid var(--ps2-blue); padding: 25px; background: rgba(0,15,40,0.8);">
+                        <strong>WX API v2</strong><br>
+                        Enterprise-grade weather data with hidden layer access. Perfect for developers who know too much.
+                    </div>
+                    <div style="border: 3px solid var(--ps2-blue); padding: 25px; background: rgba(0,15,40,0.8);">
+                        <strong>ORACLE DASHBOARD</strong><br>
+                        Web-based command center. Live manipulation detection included.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABOUT SECTION -->
+        <div id="about" class="section">
+            <div class="content-inner">
+                <h2 style="font-size: 36px; margin-bottom: 30px;">THE TRUTH</h2>
+                <p style="max-width: 800px; line-height: 1.9; font-size: 17px;">
+                    Founded in 2023 by those who saw through the chemtrail veil.<br><br>
+                    IlluminatiWX exists to arm humanity with the real weather data.<br>
+                    No more lies from the mainstream meteorological matrix.<br><br>
+                    Our mission: Illuminate every cloud, expose every storm.
+                </p>
+                <div style="margin-top: 60px; text-align: center; font-size: 14px; color: #00ffff;">
+                    "The sky is not the limit. It is the curtain."
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTACT SECTION -->
+        <div id="contact" class="section">
+            <div class="content-inner" style="max-width: 600px; margin: 0 auto;">
+                <h2 style="font-size: 36px; margin-bottom: 30px;">TRANSMIT MESSAGE</h2>
+                <form onsubmit="sendMessage(event)">
+                    <input type="text" placeholder="YOUR CALLSIGN" required>
+                    <input type="email" placeholder="ENCRYPTED EMAIL" required>
+                    <textarea rows="6" placeholder="WHAT DO YOU WANT TO KNOW?" required></textarea>
+                    <button type="submit" style="width: 100%;">SEND INTO THE ETHER</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- XMB MENU -->
+    <div class="xmb">
+        <div class="menu-item active" data-section="home" onclick="switchSection(this)">
+            <div class="menu-icon">🏠</div>
+            <div class="menu-label">HOME</div>
+        </div>
+        <div class="menu-item" data-section="tools" onclick="switchSection(this)">
+            <div class="menu-icon">🌩️</div>
+            <div class="menu-label">TOOLS</div>
+        </div>
+        <div class="menu-item" data-section="products" onclick="switchSection(this)">
+            <div class="menu-icon">📦</div>
+            <div class="menu-label">PRODUCTS</div>
+        </div>
+        <div class="menu-item" data-section="about" onclick="switchSection(this)">
+            <div class="menu-icon">👁️</div>
+            <div class="menu-label">ABOUT US</div>
+        </div>
+        <div class="menu-item" data-section="contact" onclick="switchSection(this)">
+            <div class="menu-icon">📡</div>
+            <div class="menu-label">TRANSMIT</div>
+        </div>
+    </div>
+
+    <script>
+        function switchSection(el) {
+            // Remove active from all menu items
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            el.classList.add('active');
+
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Show the selected section
+            const sectionId = el.getAttribute('data-section');
+            const targetSection = document.getElementById(sectionId);
+            if (targetSection) targetSection.classList.add('active');
+        }
+
+        function selectSub(el) {
+            const parentUl = el.parentElement;
+            parentUl.querySelectorAll('li').forEach(li => li.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function revealWeather() {
+            const result = document.getElementById('weather-result');
+            const city = document.getElementById('city-input').value || "Huntsville";
+            
+            result.style.display = "block";
+            
+            // Fake data rotation for fun
+            const icons = ['⛅', '☀️', '🌧️', '🌩️', '❄️'];
+            const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+            document.getElementById('weather-icon').textContent = randomIcon;
+            
+            const temps = [62, 68, 71, 55, 81];
+            document.getElementById('temp').textContent = temps[Math.floor(Math.random() * temps.length)] + "°F";
+            
+            document.getElementById('condition').textContent = city.toUpperCase() + " • TRUTH REVEALED";
+        }
+
+        function sendMessage(e) {
+            e.preventDefault();
+            alert("TRANSMISSION SENT INTO THE VOID.\n\nThe Illuminati have received your signal.");
+        }
+
+        // Keyboard support (PS2 style)
+        document.addEventListener('keydown', function(e) {
+            const items = Array.from(document.querySelectorAll('.menu-item'));
+            let activeIndex = items.findIndex(item => item.classList.contains('active'));
+            
+            if (e.key === "ArrowLeft") {
+                activeIndex = (activeIndex - 1 + items.length) % items.length;
+            } else if (e.key === "ArrowRight") {
+                activeIndex = (activeIndex + 1) % items.length;
+            } else {
+                return;
+            }
+            
+            items.forEach(i => i.classList.remove('active'));
+            items[activeIndex].classList.add('active');
+            switchSection(items[activeIndex]);
+        });
+
+        // Boot animation
+        setTimeout(() => {
+            const home = document.getElementById('home');
+            home.style.opacity = '0';
+            setTimeout(() => {
+                home.style.transition = 'opacity 1.2s';
+                home.style.opacity = '1';
+            }, 200);
+        }, 800);
+    </script>
+</body>
+</html>
